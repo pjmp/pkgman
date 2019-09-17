@@ -18,7 +18,7 @@ fn main() {
             pkgman.value_of("search").unwrap()
         );
 
-        let output = utils::get_pkgman_cmd(&cmd);
+        let output = utils::exec_command(&cmd);
 
         if !output.status.success() && !has_packger {
             utils::exec_command(&format!("yay -Ss {}", pkgman.value_of("search").unwrap()));
