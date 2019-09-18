@@ -1,4 +1,5 @@
 use clap::{crate_version, App, AppSettings, Arg};
+use std::process::{Command, Output, Stdio};
 
 pub fn new<'a, 'b>() -> App<'a, 'b> {
     App::new("pkgman")
@@ -57,4 +58,14 @@ pub fn new<'a, 'b>() -> App<'a, 'b> {
                 .long("purge")
                 .help("check for updates and install"),
         )
+}
+
+pub fn exec_command(cmd: &str) -> Output {
+    Command::new("sh")
+        .arg("-c")
+        .arg(format!("{} --noconfirm", cmd))
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()
+        .unwrap_or_else(|_| panic!("Failed to start '{}'", cmd.to_string()))
 }
