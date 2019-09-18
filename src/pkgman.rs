@@ -1,16 +1,17 @@
-use clap::{crate_version, App, AppSettings, Arg};
+use clap::{crate_description, crate_name, crate_version, App, AppSettings, Arg};
 use std::process::{Command, Output, Stdio};
 
 pub fn new<'a, 'b>() -> App<'a, 'b> {
-    App::new("pkgman")
+    App::new(crate_name!())
         .version(crate_version!())
+        .about(crate_description!())
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::ColorAuto)
         .arg(
             Arg::with_name("packger")
                 .short("P")
                 .long("packger")
-                .help("package manager to use, can be either pacman or yay defaulting to yay")
+                .help("package manager to use, can be either pacman or yay")
                 .takes_value(true)
                 .require_equals(true)
                 .value_name("packger")
