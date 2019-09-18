@@ -3,6 +3,11 @@ name = "pkgman"
 version = "0.2.0"
 authors = ["pjmp"]
 edition = "2018"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/pjmp/pkgman"
+description = "Silly rust wrapper on top of yay & pacman."
+keywords = ["pacman", "yay", "aur", "archlinux"]
 
 [dependencies]
 clap = "2.33.0"
