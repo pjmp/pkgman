@@ -64,9 +64,10 @@ pub fn new<'a, 'b>() -> App<'a, 'b> {
 pub fn exec_command(cmd: &str) -> Output {
     Command::new("sh")
         .arg("-c")
-        .arg(format!("{} --noconfirm", cmd))
+        .arg(format!("{}", cmd))
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
+        .stdin(Stdio::inherit())
         .output()
         .unwrap_or_else(|_| panic!("Failed to start '{}'", cmd.to_string()))
 }
