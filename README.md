@@ -1,5 +1,7 @@
-# pkgman 0.2.0
+# pkgman 0.2.1
 ```
+Silly rust wrapper on top of yay & pacman.
+
 USAGE:
     pkgman [FLAGS] [OPTIONS]
 
@@ -11,7 +13,7 @@ FLAGS:
 
 OPTIONS:
     -i, --install <package>    install a given package
-    -P, --packger=<packger>    package manager to use, can be either pacman or yay defaulting to yay
+    -P, --packger=<packger>    package manager to use, can be either pacman or yay
     -r, --remove <package>     remove a given package
     -s, --search <query>       search for given package by name
 ```
