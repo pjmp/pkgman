@@ -1,0 +1,15 @@
+(library
+ (name pkgman)
+ (libraries
+  ; lwt
+  ; cohttp
+  ; cohttp-lwt-unix
+  ; lwt_ssl
+  directories
+  ppx_deriving_yojson.runtime
+  printbox
+  printbox-text
+  str
+  yojson)
+ (preprocess
+  (pps ppx_deriving_yojson ppx_deriving.show)))
