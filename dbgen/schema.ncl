@@ -1,11 +1,13 @@
 {
     Package = {
-        name | Str,
-        version | Str,
-        url | Str,
-        install | Str,
+        description | Str,
         file | Str,
+        homepage | Str,
+        install | Str,
+        name | Str,
         postinstall | Str | default = "",
+        url | Str,
+        version | Str,
     },
 
     PackageManager = {

@@ -1,4 +1,4 @@
-let {Package, PackageManager} = import "./types.ncl" in
+let {Package, PackageManager} = import "./schema.ncl" in
 
 let packages = {
     prefix = "~/.local",
@@ -9,6 +9,8 @@ let packages = {
             version = "1.20.3",
             file = "go%{version}.linux-amd64.tar.gz",
             url = "https://dl.google.com/go/%{file}",
+            description = "The Go Programming Language",
+            homepage = "https://go.dev",
             install = m%"
                 curl -LO "%{url}"
                 rm -rf %{prefix}/go

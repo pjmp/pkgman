@@ -11,11 +11,12 @@ let () =
       | `Search | `Install ->
           print_endline "is empty";
           exit 1
-      | `Version | `Init -> ()
+      | `Version | `Init | `List -> ()
   in
 
   match action with
   | `Search -> Ops.search (List.hd packages)
   | `Install -> Ops.install packages
+  | `List -> Ops.list ()
   | `Version -> print_endline "v0.1"
   | `Init -> Arg.usage specs usage

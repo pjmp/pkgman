@@ -1,4 +1,4 @@
-type act = [ `Search | `Install | `Version | `Init ] [@@deriving show]
+type act = [ `Search | `Install | `Version | `Init | `List ] [@@deriving show]
 
 type opts = { packages : string list; action : act }
 [@@deriving show { with_path = false }]
@@ -12,6 +12,7 @@ let specs =
     ("-v", Arg.Unit (fun _ -> action := `Version), "Print version information");
     ("-i", Arg.Unit (fun _ -> action := `Install), "Install a package(s)");
     ("-s", Arg.Unit (fun _ -> action := `Search), "Search for a package(s)");
+    ("-l", Arg.Unit (fun _ -> action := `List), "List available packages");
     (* ("-c", Arg.Unit (fun _ -> action := `Update), "Check for updates"); *)
   ]
 
