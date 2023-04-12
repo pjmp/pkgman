@@ -1,0 +1,12 @@
+{
+	"ocaml.sandbox": {
+		"kind": "opam",
+		"switch": "${workspaceFolder:pkgman}"
+	},
+	"cSpell.words": [
+		"chdir",
+		"Cohttp",
+		"iteri",
+		"pkgs"
+	]
+}
