@@ -8,6 +8,8 @@
 		"Cohttp",
 		"dbgen",
 		"iteri",
-		"pkgs"
+		"pkgs",
+		"WEXITED",
+		"WSTOPPED"
 	]
 }

@@ -80,52 +80,76 @@ let open_db =
 
   match pm with
   | Error err ->
-      print_endline ("Error parsing `db.json` file: " ^ err);
+      Printf.eprintf "Error parsing `db.json` file: %s" err;
       None
   | Ok db -> Some db
+
+let exec cmd =
+  match Unix.system cmd with
+  (* | WEXITED code | WSIGNALED code | WSTOPPED code ->
+      print_endline ("Exited with: " ^ string_of_int code) *)
+  | _ -> ()
+
+let prompt ?(msg = "Continue") () =
+  Printf.printf "%s [y/N]: " msg;
+
+  let ans = read_line () in
+
+  if String.lowercase_ascii ans = "y" then () else exit 1
 
 let search query =
   match open_db with
   | Some db ->
+      (* https://stackoverflow.com/a/8373836 *)
+      let contains haystick =
+        let re = Str.regexp_string_case_fold query in
+        try
+          ignore (Str.search_forward re haystick 0);
+          true
+        with Not_found -> false
+      in
+
       let matches =
         List.filter
-          (fun pkg ->
-            (* https://stackoverflow.com/a/8373836 *)
-            let contains needle haystick =
-              let re = Str.regexp_string_case_fold needle in
-              try
-                ignore (Str.search_forward re haystick 0);
-                true
-              with Not_found -> false
-            in
-            contains query pkg.name || contains query pkg.description)
+          (fun pkg -> contains pkg.name || contains pkg.description)
           db.packages
       in
-      if matches = [] then print_endline "no matches" else print_table matches
+      if matches = [] then Printf.eprintf "No matches found for: %s" query
+      else print_table matches
   | None -> ()
 
 let install pkgs =
   match open_db with
   | None -> ()
-  | Some db -> (
-      let matches =
-        List.filter
-          (fun pkg -> List.exists (fun query -> pkg.name = query) pkgs)
-          db.packages
+  | Some db ->
+      let found, not_found =
+        pkgs
+        |> List.partition_map (fun query ->
+               match List.find_opt (fun a -> a.name = query) db.packages with
+               | Some pkg -> Either.Left pkg
+               | None -> Either.Right query)
       in
 
-      match matches with
-      | [] -> print_endline "no matchs"
-      | matches ->
-          let () = Sys.chdir (Filename.get_temp_dir_name ()) in
-          List.map
-            (fun pkg ->
-              Domain.spawn (fun _ ->
-                  print_endline ("Name: " ^ pkg.name);
-                  let code = Sys.command pkg.install in
-                  print_endline ("Exited with: " ^ string_of_int code)))
-            matches
-          |> List.iter Domain.join)
+      if not_found <> [] then (
+        Printf.eprintf "No matches found for: %s\n\n"
+          (String.concat ", " not_found);
+        flush_all ());
+
+      if found <> [] then
+        let _ = print_table found in
+        let _ = Printf.printf "Install %d package(s)\n\n" (List.length found) in
+        let _ = prompt () in
+        let () = Sys.chdir (Filename.get_temp_dir_name ()) in
+        List.map
+          (fun pkg ->
+            Domain.spawn (fun _ ->
+                print_endline ("Name: " ^ pkg.name);
+
+                let _ = exec pkg.install in
+
+                if pkg.postinstall <> String.empty then exec pkg.postinstall))
+          found
+        |> List.iter Domain.join
 
 let list () =
   match open_db with None -> () | Some db -> print_table db.packages

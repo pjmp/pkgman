@@ -3,7 +3,7 @@ type act = [ `Search | `Install | `Version | `Init | `List ] [@@deriving show]
 type opts = { packages : string list; action : act }
 [@@deriving show { with_path = false }]
 
-let usage = "usage: [-install] [-search] <pkg> [<pkg1>] ... [-version]"
+let usage = "usage: [-install] [-search] [-list] <pkg> [<pkg1>] ... [-version]"
 let packages = ref []
 let action : act ref = ref `Init
 

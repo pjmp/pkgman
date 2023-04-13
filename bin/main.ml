@@ -9,7 +9,7 @@ let () =
     if List.length packages = 0 then
       match action with
       | `Search | `Install ->
-          print_endline "is empty";
+          Printf.eprintf "%s\n" usage;
           exit 1
       | `Version | `Init | `List -> ()
   in
