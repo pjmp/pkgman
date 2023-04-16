@@ -73,16 +73,19 @@ let print_table packages =
   PrintBox_text.output stdout (table |> B.grid |> B.frame);
   print_newline ()
 
-let open_db =
-  let json = Yojson.Safe.from_file (db_path ()) in
-
+let open_db () =
+  let json = Yojson.Safe.from_channel (In_channel.open_text (db_path ())) in
   let pm = package_manager_of_yojson json in
 
   match pm with
   | Error err ->
-      Printf.eprintf "Error parsing `db.json` file: %s" err;
+      Printf.eprintf "Error parsing `db.json` file because: %s\n" err;
       None
   | Ok db -> Some db
+
+(* let read_file file =
+   let chan = In_channel.open_text file in
+   In_channel.input_all chan *)
 
 let exec cmd =
   match Unix.system cmd with
@@ -98,7 +101,7 @@ let prompt ?(msg = "Continue") () =
   if String.lowercase_ascii ans = "y" then () else exit 1
 
 let search query =
-  match open_db with
+  match open_db () with
   | Some db ->
       (* https://stackoverflow.com/a/8373836 *)
       let contains haystick =
@@ -119,7 +122,7 @@ let search query =
   | None -> ()
 
 let install pkgs =
-  match open_db with
+  match open_db () with
   | None -> ()
   | Some db ->
       let found, not_found =
@@ -140,16 +143,17 @@ let install pkgs =
         let _ = Printf.printf "Install %d package(s)\n\n" (List.length found) in
         let _ = prompt () in
         let () = Sys.chdir (Filename.get_temp_dir_name ()) in
+
+        let module D = Domain [@alert "-unstable"] in
         List.map
           (fun pkg ->
-            Domain.spawn (fun _ ->
+            D.spawn (fun _ ->
                 print_endline ("Name: " ^ pkg.name);
 
                 let _ = exec pkg.install in
-
                 if pkg.postinstall <> String.empty then exec pkg.postinstall))
           found
-        |> List.iter Domain.join
+        |> List.iter D.join
 
 let list () =
-  match open_db with None -> () | Some db -> print_table db.packages
+  match open_db () with None -> () | Some db -> print_table db.packages
