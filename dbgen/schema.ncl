@@ -8,6 +8,7 @@
         postinstall | Str | default = "",
         url | Str,
         version | Str,
+        check_update | Str | default = ""
     },
 
     PackageManager = {

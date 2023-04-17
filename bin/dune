@@ -1,13 +1,4 @@
 (executable
  (public_name pkgman)
  (name main)
- (libraries
-  pkgman
-  ; lwt
-  ; cohttp
-  ; cohttp-lwt-unix
-  ; lwt_ssl
-  yojson
-  ppx_deriving_yojson.runtime)
- (preprocess
-  (pps ppx_deriving_yojson ppx_deriving.show)))
+ (libraries pkgman))

@@ -6,10 +6,14 @@
   ; cohttp-lwt-unix
   ; lwt_ssl
   directories
-  ppx_deriving_yojson.runtime
   printbox
   printbox-text
-  str
-  yojson)
+  str)
  (preprocess
-  (pps ppx_deriving_yojson ppx_deriving.show)))
+  (pps ppx_deriving_yojson)))
+
+; (rule
+;  (target tmp)
+;  (action
+;   (system
+;    "touch tmp; nickel -f ../../../dbgen/db.ncl export > ~/.config/pkgman/db.json")))

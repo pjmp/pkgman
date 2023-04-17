@@ -5,22 +5,20 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github pombadev/pkgman))
 
-(authors "Author Name")
+(authors "Pomba Magar")
 
-(maintainers "Maintainer Name")
+(maintainers "Pomba Magar")
 
-(license LICENSE)
-
-(documentation https://url/to/documentation)
+(license MIT)
 
 (package
  (name pkgman)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (version 0.1)
+ (synopsis "Packages downloader")
+ (description
+  "`pkgman` is a cli tool to download packages from arbitrary sources and apply post/pre processing to the downloaded files/system.")
  (depends ocaml dune)
  (tags
-  (topics "to describe" your project)))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
+  (cli downloader "packages downloader")))

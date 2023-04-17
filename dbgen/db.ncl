@@ -21,6 +21,40 @@ let packages = {
                 if ! echo "$PATH" | grep -qw "$path"; then
                     echo "'$path' doesn't exist in \$PATH, add 'export PATH=\$PATH:$path' to you rc file"
                 fi
+            "%m,
+            check_update = m%"
+                node --no-warnings -e '
+                (async () => {
+                    const path = process.env.PKGMAN_DB_PATH;
+                    const pkgName = process.env.PKGMAN_PKG_NAME;
+
+                    if (!path || !pkgName) {
+                        console.error(`env ${!path && "PKGMAN_DB_PATH" || !pkgName && "PKGMAN_PKG_NAME"} not found`)
+                        process.exit(1)
+                    }
+
+                    try {
+                        const versions = await (await fetch("https://go.dev/dl/?mode=json")).json();
+                        const db = require(path);
+                        const [{version: v}] = versions
+                        const version = v.replace(/^go/, "");
+                        const pkg = db.packages.find((pkg) => pkg.name === pkgName);
+
+                        if (!pkg) {
+                            console.error("???")
+                            process.exit(1)
+                        }
+
+                        const {version: currentVersion} = pkg;
+
+                        currentVersion !== version && console.info("current version is `%s` found `%s`", currentVersion, version);
+
+                    } catch (error) {
+                        console.error(error.message);
+                        process.exit(1);
+                    }
+                })()
+                '
             "%m
         },
         {

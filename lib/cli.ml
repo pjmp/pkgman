@@ -1,7 +1,5 @@
-type act = [ `Search | `Install | `Version | `Init | `List ] [@@deriving show]
-
+type act = [ `Search | `Install | `Version | `Init | `List ]
 type opts = { packages : string list; action : act }
-[@@deriving show { with_path = false }]
 
 let usage = "usage: [-install] [-search] [-list] <pkg> [<pkg1>] ... [-version]"
 let packages = ref []

@@ -7,8 +7,10 @@
 		"chdir",
 		"Cohttp",
 		"dbgen",
+		"getenv",
 		"iteri",
 		"pkgs",
+		"putenv",
 		"WEXITED",
 		"WSTOPPED"
 	]

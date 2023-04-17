@@ -15,7 +15,7 @@ let () =
   in
 
   match action with
-  | `Search -> Ops.search (List.hd packages)
+  | `Search -> Ops.search (List.hd packages) (* handle list *)
   | `Install -> Ops.install packages
   | `List -> Ops.list ()
   | `Version -> print_endline "v0.1"

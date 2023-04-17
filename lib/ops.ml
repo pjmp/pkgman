@@ -1,5 +1,8 @@
+module D = Domain [@alert "-unstable"]
+
 type package = {
   description : string;
+  check_update : string;
   file : string;
   homepage : string;
   install : string;
@@ -8,14 +11,14 @@ type package = {
   url : string;
   version : string;
 }
-[@@deriving of_yojson, show]
+[@@deriving of_yojson]
 
 type package_manager = {
   packages : package list;
   prefix : string;
   version : string;
 }
-[@@deriving of_yojson, show]
+[@@deriving of_yojson]
 
 let dir_exist d = try Sys.is_directory d with _ -> false
 
@@ -88,10 +91,10 @@ let open_db () =
    In_channel.input_all chan *)
 
 let exec cmd =
+  Unix.putenv "PKGMAN_DB_PATH" (db_path ());
+
   match Unix.system cmd with
-  (* | WEXITED code | WSIGNALED code | WSTOPPED code ->
-      print_endline ("Exited with: " ^ string_of_int code) *)
-  | _ -> ()
+  | WEXITED code | WSIGNALED code | WSTOPPED code -> code
 
 let prompt ?(msg = "Continue") () =
   Printf.printf "%s [y/N]: " msg;
@@ -144,16 +147,36 @@ let install pkgs =
         let _ = prompt () in
         let () = Sys.chdir (Filename.get_temp_dir_name ()) in
 
-        let module D = Domain [@alert "-unstable"] in
         List.map
           (fun pkg ->
             D.spawn (fun _ ->
-                print_endline ("Name: " ^ pkg.name);
-
                 let _ = exec pkg.install in
-                if pkg.postinstall <> String.empty then exec pkg.postinstall))
+                if pkg.postinstall <> String.empty then
+                  ignore (exec pkg.postinstall)))
           found
         |> List.iter D.join
 
 let list () =
   match open_db () with None -> () | Some db -> print_table db.packages
+
+let check_updates () =
+  match open_db () with
+  | None -> ()
+  | Some db ->
+      let pkgs =
+        List.filter_map
+          (fun pkg ->
+            match pkg.check_update = String.empty with
+            | true -> None
+            | false ->
+                Some
+                  (D.spawn (fun _ ->
+                       Unix.putenv "PKGMAN_PKG_NAME" pkg.name;
+                       let code = exec pkg.check_update in
+                       if code = 0 then Some pkg.name else None)))
+          db.packages
+      in
+      let _ =
+        List.map D.join pkgs |> List.partition_map (fun _ -> Either.left ())
+      in
+      ()
