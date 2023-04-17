@@ -11,8 +11,13 @@ tags: ["cli" "downloader" "packages downloader"]
 homepage: "https://github.com/pombadev/pkgman"
 bug-reports: "https://github.com/pombadev/pkgman/issues"
 depends: [
-  "ocaml"
+  "directories"
   "dune" {>= "3.6"}
+  "ocaml"
+  "ppx_deriving_yojson"
+  "printbox"
+  "printbox-text"
+  "str"
   "odoc" {with-doc}
 ]
 build: [
