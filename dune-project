@@ -15,7 +15,7 @@
 
 (package
  (name pkgman)
- (version 0.1)
+ (version 0.2)
  (synopsis "Packages downloader")
  (description
   "`pkgman` is a cli tool to download packages from arbitrary sources and apply post/pre processing to the downloaded files/system.")

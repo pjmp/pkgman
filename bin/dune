@@ -1,4 +1,6 @@
 (executable
  (public_name pkgman)
  (name main)
- (libraries pkgman))
+ (libraries cmdliner dune-build-info pkgman providers)
+ (preprocess
+  (pps ppx_deriving.show ppx_enumerate)))

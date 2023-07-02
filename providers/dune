@@ -1,19 +1,14 @@
 (library
- (name pkgman)
+ (name providers)
  (libraries
   cohttp
   cohttp-lwt-unix
-  directories
-  http
-  inquirer_oc
   lwt
   lwt_ssl
-  printbox
-  printbox-text
-  progress
-  str
   terminal_size
-  textwrap)
+  textwrap
+  printbox
+  printbox-text)
  (preprocess
   (pps ppx_yojson_conv ppx_deriving.show)))
 

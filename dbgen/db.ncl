@@ -72,6 +72,83 @@ let packages = {
                     echo "'$path' doesn't exist in \$PATH, add 'export PATH=\$PATH:$path' to you rc file"
                 fi
             "%m,
+            postinstall = "",
+            check_update = ""
+        },
+        {
+            name = "gh",
+            version = "2.27.0",
+            file = "%{name}_%{version}_linux_amd64.rpm",
+            url = "https://github.com/cli/cli/releases/download/v%{version}/%{file}",
+            description = "GitHub's official command line tool",
+            homepage = "https://cli.github.com/",
+            install = m%"
+                curl -LO "%{url}"
+                sudo dnf install ./%{file}
+            "%m,
+            postinstall = "",
+            check_update = ""
+        },
+        {
+            name = "fnm",
+            version = "1.33.1",
+            file = "%{name}-linux.zip",
+            url = "https://github.com/Schniz/fnm/releases/download/v%{version}/%{file}",
+            description = "🚀 Fast and simple Node.js version manager, built in Rust",
+            homepage = "https://fnm.vercel.app",
+            install = m%"
+                curl -LO "%{url}"
+                unzip -o %{file} -d %{prefix}/bin
+                chmod --verbose +x %{prefix}/bin/%{name}
+            "%m,
+            postinstall = "",
+            check_update = ""
+        },
+        {
+            name = "gprofile",
+            version = "0.2.0",
+            file = "%{name}-linux.zip",
+            url = "https://github.com/pombadev/gprofile/releases/download/v%{version}/%{file}",
+            description = "Quickly switch git user, email with ease.",
+            homepage = "https://github.com/pombadev/gprofile",
+            install = m%"
+                curl -LO "%{url}"
+                mv --verbose %{file} %{prefix}/bin
+                chmod --verbose +x %{prefix}/bin/git-profile
+            "%m,
+            postinstall = "",
+            check_update = ""
+        },
+        {
+            name = "mkcert",
+            version = "1.4.4",
+            file = "%{name}-v%{version}-linux-amd64",
+            url = "https://github.com/FiloSottile/mkcert/releases/download/v%{version}/%{file}",
+            description = "A simple zero-config tool to make locally trusted development certificates with any names you'd like.",
+            homepage = "mkcert.dev",
+            install = m%"
+                curl -LO "%{url}"
+                mv --verbose %{file} %{prefix}/bin/%{name}
+                chmod --verbose +x %{prefix}/bin/%{name}
+            "%m,
+            postinstall = "",
+            check_update = ""
+        },
+        {
+            name = "act",
+            version = "0.2.44",
+            file = "%{name}_Linux_x86_64.tar.gz",
+            url = "https://github.com/nektos/act/releases/download/v%{version}/%{file}",
+            description = "Run your GitHub Actions locally 🚀",
+            homepage = "https://github.com/nektos/act",
+            install = m%"
+                curl -LO "%{url}"
+                tar -xzf %{file}
+                mv --verbose %{name} %{prefix}/bin/%{name}
+                chmod --verbose +x %{prefix}/bin/%{name}
+            "%m,
+            postinstall = "",
+            check_update = ""
         }
     ]
 } in

@@ -80,11 +80,13 @@ let open_db () =
   let json = Yojson.Safe.from_channel (In_channel.open_text (db_path ())) in
   let pm = package_manager_of_yojson json in
 
-  match pm with
-  | Error err ->
-      Printf.eprintf "Error parsing `db.json` file because: %s\n" err;
-      None
-  | Ok db -> Some db
+  Some pm
+
+(* match pm with
+   | Error err ->
+       Printf.eprintf "Error parsing `db.json` file because: %s\n" err;
+       None
+   | Ok db -> Some db *)
 
 (* let read_file file =
    let chan = In_channel.open_text file in
