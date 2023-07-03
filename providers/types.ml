@@ -1,7 +1,8 @@
+type query_type = [ `Repo | `Users ]
+
 module type Provider = sig
   type t = { name : string }
 
-  val t : t
-  val search : query:string -> ty:bool -> unit
-  val install : query:string -> ty:bool -> unit
+  val search : query:string -> ty:query_type -> unit
+  val install : query:string -> ty:query_type -> unit
 end

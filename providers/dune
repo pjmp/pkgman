@@ -6,6 +6,7 @@
   lwt
   lwt_ssl
   terminal_size
+  inquirer_oc
   textwrap
   printbox
   printbox-text)

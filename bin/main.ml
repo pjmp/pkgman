@@ -1,7 +1,11 @@
 (* open Pkgman *)
 
+[@@@warning "-27"]
+
+(* type q = Cli.query_type *)
+
 let run () =
-  let run action query provider =
+  let run action query provider ty =
     let (module P : Providers.Types.Provider) =
       match provider with
       | Cli.Github -> (module Providers.Github.Github)
@@ -10,8 +14,8 @@ let run () =
             ("Hosting " ^ Cli.show_providers provider ^ " is unimplemented")
     in
     match action with
-    | Cli.Install -> P.install ~query ~ty:true
-    | Cli.Search -> P.search ~query ~ty:true
+    | Cli.Install -> P.install ~query ~ty
+    | Cli.Search -> P.search ~query ~ty
   in
   run
 
@@ -19,9 +23,32 @@ module App = Cli.CLI (struct
   let run = run ()
 end)
 
+(*
+https://gitlab.manjaro.org/packages/core/bash/-/blob/master/dot.bashrc
+*.tar.bz2)   tar xjf $1   ;;
+*.tar.gz)    tar xzf $1   ;;
+*.bz2)       bunzip2 $1   ;;
+*.rar)       unrar x $1   ;;
+*.gz)        gunzip $1    ;;
+*.tar)       tar xf $1    ;;
+*.tbz2)      tar xjf $1   ;;
+*.tgz)       tar xzf $1   ;;
+*.zip)       unzip $1     ;;
+*.Z)         uncompress $1;;
+*.7z)        7z x $1      ;;
+*)
+
+(* let ex filename =
+   match Filename.extension filename with
+   | ".tar.gz" -> "tar xzf"
+   | ".tar" -> "tar xf"
+   | ".zip" -> "unzip"
+   | _ as ext -> failwith (ext ^ " is not supported") *)
+
 let () =
   (* remove this line *)
   print_newline ();
+
   App.main ()
 
 (* let _ = Github.install Sys.argv.(1) in

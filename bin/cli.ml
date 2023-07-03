@@ -2,9 +2,12 @@ type providers = Github | Gitlab | Bitbucket | Codeberg
 [@@deriving show { with_path = false }, enumerate]
 
 type action = Install | Search [@@deriving show { with_path = false }]
+type query_type = [ `Repo | `Users ] [@@deriving enumerate]
+
+let show_query_type = function `Repo -> "repo" | `Users -> "users"
 
 module type Runnable = sig
-  val run : action -> string -> providers -> unit
+  val run : action -> string -> providers -> query_type -> unit
 end
 
 module CLI (R : Runnable) = struct
@@ -22,23 +25,45 @@ module CLI (R : Runnable) = struct
       & pos 0 (some string) None
       & info [] ~doc:"foo bar baz" ~docv:"QUERY")
 
+  (* let provider_t =
+     let opts =
+       all_of_providers
+       |> List.map (fun provider ->
+              ( provider,
+                Arg.info
+                  [
+                    prefix_of_providers provider;
+                    String.lowercase_ascii (show_providers provider);
+                  ]
+                  ~doc:("Use " ^ show_providers provider) ))
+     in
+     Arg.(last & vflag_all [ Github ] opts) *)
+
   let provider_t =
     let opts =
       all_of_providers
-      |> List.map (fun provider ->
-             ( provider,
-               Arg.info
-                 [
-                   prefix_of_providers provider;
-                   String.lowercase_ascii (show_providers provider);
-                 ]
-                 ~doc:("Use " ^ show_providers provider) ))
+      |> List.map (fun ty -> (String.lowercase_ascii (show_providers ty), ty))
+      |> Arg.enum
     in
-    Arg.(last & vflag_all [ Github ] opts)
+    Arg.(
+      value & opt opts Github
+      & info [ "p"; "provider" ] ~doc:"Specify provider" ~docv:"PROVIDER")
+
+  let query_type_t =
+    let opts =
+      all_of_query_type
+      |> List.map (fun ty -> (String.lowercase_ascii (show_query_type ty), ty))
+      |> Arg.enum
+    in
+    Arg.(
+      value & opt opts `Repo
+      & info [ "t"; "type" ] ~doc:"Search by repo or Users" ~docv:"TYPE")
 
   let make_cmd ~action ~cmd ~doc =
     let info = Cmd.info cmd ~doc ~exits:[] in
-    let term = Term.(const (R.run action) $ query_t $ provider_t) in
+    let term =
+      Term.(const (R.run action) $ query_t $ provider_t $ query_type_t)
+    in
     Cmd.v info Term.(const Fun.id $ term)
 
   let main_cmd =
@@ -55,7 +80,7 @@ module CLI (R : Runnable) = struct
       Term.(
         ret
           (const (fun _ -> `Help (`Plain, None))
-          $ Term.(const Fun.id $ provider_t)))
+          $ Term.(const (fun _ _ -> ()) $ provider_t $ query_type_t)))
     in
     Cmd.group info ~default
       [
