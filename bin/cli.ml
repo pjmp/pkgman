@@ -23,21 +23,7 @@ module CLI (R : Runnable) = struct
     Arg.(
       required
       & pos 0 (some string) None
-      & info [] ~doc:"foo bar baz" ~docv:"QUERY")
-
-  (* let provider_t =
-     let opts =
-       all_of_providers
-       |> List.map (fun provider ->
-              ( provider,
-                Arg.info
-                  [
-                    prefix_of_providers provider;
-                    String.lowercase_ascii (show_providers provider);
-                  ]
-                  ~doc:("Use " ^ show_providers provider) ))
-     in
-     Arg.(last & vflag_all [ Github ] opts) *)
+      & info [] ~doc:"Search for repo or org." ~docv:"QUERY")
 
   let provider_t =
     let opts =
@@ -47,7 +33,7 @@ module CLI (R : Runnable) = struct
     in
     Arg.(
       value & opt opts Github
-      & info [ "p"; "provider" ] ~doc:"Specify provider" ~docv:"PROVIDER")
+      & info [ "p"; "provider" ] ~doc:"Specify a provider" ~docv:"PROVIDER")
 
   let query_type_t =
     let opts =
@@ -57,14 +43,14 @@ module CLI (R : Runnable) = struct
     in
     Arg.(
       value & opt opts `Repo
-      & info [ "t"; "type" ] ~doc:"Search by repo or Users" ~docv:"TYPE")
+      & info [ "t"; "type" ] ~doc:"Search by repo or users." ~docv:"TYPE")
 
   let make_cmd ~action ~cmd ~doc =
     let info = Cmd.info cmd ~doc ~exits:[] in
     let term =
       Term.(const (R.run action) $ query_t $ provider_t $ query_type_t)
     in
-    Cmd.v info Term.(const Fun.id $ term)
+    Cmd.v info Term.(const (fun _ -> ()) $ term)
 
   let main_cmd =
     let version =
@@ -73,8 +59,8 @@ module CLI (R : Runnable) = struct
     in
     let info =
       Cmd.info "pkgman" ~version ~exits:[]
-        ~doc:"download releases from various hosting"
-        ~envs:[ Cmd.Env.info "PROVIDER_APIKEY" ~doc:"API key if needed" ]
+        ~doc:"Download releases from various providers."
+        ~envs:[ Cmd.Env.info "PROVIDER_APIKEY" ~doc:"API key if needed." ]
     in
     let default =
       Term.(
@@ -84,8 +70,8 @@ module CLI (R : Runnable) = struct
     in
     Cmd.group info ~default
       [
-        make_cmd ~cmd:"search" ~doc:"Search for given repo" ~action:Search;
-        make_cmd ~cmd:"install" ~doc:"Install the given given repo's release"
+        make_cmd ~cmd:"search" ~doc:"Search for a given repo." ~action:Search;
+        make_cmd ~cmd:"install" ~doc:"Install the given repo's latest release."
           ~action:Install;
       ]
 
