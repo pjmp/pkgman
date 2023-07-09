@@ -28,79 +28,6 @@ type gh_responses = { items : gh_response list }
 type gh_repo = { name : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson]
 
-let print_tree : string -> gh_response list -> unit =
- fun query pkgs ->
-  let cols = Option.value ~default:80 (Terminal_size.get_columns ()) - 10 in
-  let writer = Wrapper.make ~break_long_words:true ~drop_whitespace:true cols in
-  let module B = PrintBox in
-  let tree =
-    pkgs
-    |> List.map (fun (pkg : gh_response) ->
-           let branch = B.text (" " ^ pkg.name) in
-
-           let leaves =
-             Printf.sprintf " %s\n %s\n %s\n %s" pkg.full_name
-               (Wrapper.fill writer
-                  (Option.value ~default:"Description: N/A" pkg.description))
-               ("License: "
-               ^ match pkg.license with Some l -> l.name | _ -> "N/A")
-               pkg.html_url
-           in
-           B.tree branch [ B.text leaves ])
-  in
-  PrintBox_text.output stdout
-    (B.tree
-       (B.text
-          (Printf.sprintf "%d repo(s) matched the query: '%s'"
-             (List.length pkgs) query))
-       tree);
-  print_newline ()
-
-let mkdir dir =
-  try if not (Sys.file_exists dir) then Sys.mkdir dir 0o755 with _ -> ()
-
-let app_dir () =
-  let module H = Directories.Base_dirs () in
-  let dir =
-    Option.bind H.home_dir (fun home ->
-        let dir =
-          List.fold_right Filename.concat [ home; ".local"; "pkgman" ] ""
-        in
-        Some dir)
-  in
-
-  match dir with
-  | Some dir ->
-      let _ = mkdir dir in
-      Unix.realpath dir
-  | None -> failwith "HOME directory not found"
-
-let exec filename repo =
-  let has ext =
-    try
-      let ext = Printf.sprintf "^*.%s$" ext in
-      let _ = Str.search_forward (Str.regexp ext) filename 0 in
-      true
-    with _ -> false
-  in
-
-  let cmd =
-    Option.bind
-      ([
-         (".tar.gz", "tar --strip-components=1 -C " ^ repo ^ " -xzf " ^ filename);
-         (".tar", "tar --strip-components=1 -C " ^ repo ^ " -xf " ^ filename);
-         (".zip", "unzip ");
-       ]
-      |> List.find_opt (fun ext -> has (fst ext)))
-      (fun (_, a) -> Some a)
-  in
-
-  match cmd with
-  | Some cmd ->
-      mkdir repo;
-      Sys.command cmd |> exit
-  | _ -> failwith (filename ^ " is not supported")
-
 module Github : Provider = struct
   type t = { name : string }
 
@@ -117,7 +44,17 @@ module Github : Provider = struct
     in
     let json = Yojson.Safe.from_string json in
     let res = gh_responses_of_yojson json in
-    print_tree query res.items
+    let open Pkgman.Printer in
+    print_tree query
+      (res.items
+      |> List.map (fun (t : gh_response) ->
+             {
+               description = t.description;
+               repo_name = t.full_name;
+               name = t.name;
+               url = t.html_url;
+               license = Option.bind t.license (fun l -> Some l.name);
+             }))
 
   let install ~query =
     let repo_url =
@@ -185,13 +122,11 @@ module Github : Provider = struct
     in
 
     let _ =
-      Lwt_main.run (Lwt.pick [ download; Loading.spinner ~message:name ])
+      Lwt_main.run (Lwt.pick [ download; Pkgman.Utils.spinner ~message:name ])
     in
 
     print_newline ();
 
-    let _ = exec name repo_name in
-
-    (* let _ = Sys.rename name repo_name in *)
+    let _ = Pkgman.Utils.exec name repo_name in
     ()
 end

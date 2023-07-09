@@ -1,23 +1,5 @@
 (library
  (name providers)
- (libraries
-  cohttp
-  cohttp-lwt-unix
-  directories
-  inquirer_oc
-  lwt
-  lwt_ssl
-  printbox
-  printbox-text
-  progress
-  terminal_size
-  lwt_ppx
-  textwrap)
+ (libraries cohttp cohttp-lwt-unix inquirer_oc lwt lwt_ppx lwt_ssl pkgman)
  (preprocess
   (pps ppx_yojson_conv ppx_deriving.show lwt_ppx)))
-
-; (rule
-;  (target tmp)
-;  (action
-;   (system
-;    "touch tmp; nickel -f ../../../dbgen/db.ncl export > ~/.config/pkgman/db.json")))

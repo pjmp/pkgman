@@ -1,24 +1,12 @@
 (library
  (name pkgman)
  (libraries
-  cohttp
-  cohttp-lwt-unix
   directories
-  http
-  inquirer_oc
+  fileutils
   lwt
   lwt_ssl
   printbox
   printbox-text
-  progress
   str
   terminal_size
-  textwrap)
- (preprocess
-  (pps ppx_yojson_conv ppx_deriving.show)))
-
-; (rule
-;  (target tmp)
-;  (action
-;   (system
-;    "touch tmp; nickel -f ../../../dbgen/db.ncl export > ~/.config/pkgman/db.json")))
+  textwrap))
