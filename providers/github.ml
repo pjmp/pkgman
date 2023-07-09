@@ -1,8 +1,6 @@
 open Lwt
 open Types
 
-[@@@warning "-27-26"]
-
 type gh_asset = { url : string; name : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
@@ -27,13 +25,17 @@ type gh_response = {
 type gh_responses = { items : gh_response list }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
-let print_tree query pkgs =
+type gh_repo = { name : string }
+[@@yojson.allow_extra_fields] [@@deriving yojson]
+
+let print_tree : string -> gh_response list -> unit =
+ fun query pkgs ->
   let cols = Option.value ~default:80 (Terminal_size.get_columns ()) - 10 in
   let writer = Wrapper.make ~break_long_words:true ~drop_whitespace:true cols in
   let module B = PrintBox in
   let tree =
     pkgs
-    |> List.map (fun pkg ->
+    |> List.map (fun (pkg : gh_response) ->
            let branch = B.text (" " ^ pkg.name) in
 
            let leaves =
@@ -54,35 +56,59 @@ let print_tree query pkgs =
        tree);
   print_newline ()
 
-let get_cmd filename =
-  let has e =
+let mkdir dir =
+  try if not (Sys.file_exists dir) then Sys.mkdir dir 0o755 with _ -> ()
+
+let app_dir () =
+  let module H = Directories.Base_dirs () in
+  let dir =
+    Option.bind H.home_dir (fun home ->
+        let dir =
+          List.fold_right Filename.concat [ home; ".local"; "pkgman" ] ""
+        in
+        Some dir)
+  in
+
+  match dir with
+  | Some dir ->
+      let _ = mkdir dir in
+      Unix.realpath dir
+  | None -> failwith "HOME directory not found"
+
+let exec filename repo =
+  let has ext =
     try
-      let ext = Printf.sprintf "^*.%s$" e in
+      let ext = Printf.sprintf "^*.%s$" ext in
       let _ = Str.search_forward (Str.regexp ext) filename 0 in
       true
     with _ -> false
   in
 
-  let c = [ (".tar.gz", "tar xzf"); (".tar", "tar xf"); (".zip", "unzip") ] in
+  let cmd =
+    Option.bind
+      ([
+         (".tar.gz", "tar --strip-components=1 -C " ^ repo ^ " -xzf " ^ filename);
+         (".tar", "tar --strip-components=1 -C " ^ repo ^ " -xf " ^ filename);
+         (".zip", "unzip ");
+       ]
+      |> List.find_opt (fun ext -> has (fst ext)))
+      (fun (_, a) -> Some a)
+  in
 
-  let file = c |> List.find_opt (fun i -> has (fst i)) in
-
-  match file with
-  | Some file -> snd file
+  match cmd with
+  | Some cmd ->
+      mkdir repo;
+      Sys.command cmd |> exit
   | _ -> failwith (filename ^ " is not supported")
 
 module Github : Provider = struct
   type t = { name : string }
 
-  [@@@warning "-32"]
-
-  let t = { name = "github" }
-
   let search ~query ~ty =
-    let t = match ty with `Users -> "users" | `Repo -> "repositories" in
+    let ty = match ty with `Users -> "users" | `Repo -> "repositories" in
     let url =
       Printf.sprintf
-        "https://api.github.com/search/%s?per_page=10&sort=best&q=%s" t query
+        "https://api.github.com/search/%s?per_page=100&sort=best&q=%s" ty query
       |> Uri.of_string
     in
     let json =
@@ -93,11 +119,25 @@ module Github : Provider = struct
     let res = gh_responses_of_yojson json in
     print_tree query res.items
 
-  let install ~query ~ty =
+  let install ~query =
+    let repo_url =
+      Printf.sprintf "https://api.github.com/repos/%s" query |> Uri.of_string
+    in
+
+    let repo_name =
+      let res =
+        Fetcher.get repo_url >>= fun (_, body) -> Cohttp_lwt.Body.to_string body
+      in
+      let json = Lwt_main.run res |> Yojson.Safe.from_string in
+      let res = gh_repo_of_yojson json in
+      res.name
+    in
+
     let url =
       Printf.sprintf "https://api.github.com/repos/%s/releases/latest" query
       |> Uri.of_string
     in
+
     let json =
       Lwt_main.run
         (Fetcher.get url >>= fun (_, body) -> body |> Cohttp_lwt.Body.to_string)
@@ -127,28 +167,31 @@ module Github : Provider = struct
 
     let _ = Filename.get_temp_dir_name () |> Sys.chdir in
 
-    let dir = Sys.getcwd () |> Unix.realpath |> Filename.concat in
-
-    let filename = dir name in
-
-    print_endline filename;
-
-    let _ =
-      Lwt_main.run
-        ( Fetcher.get ~download:true (url |> Uri.of_string)
-        >>= fun (_resp, body) ->
-          let x = Cohttp.Header.get _resp.headers "Content-Length" in
-          let length = int_of_string (Option.get x) in
-          (* let x = Cohttp.Header.to_string _resp.headers in
-             let _ = print_endline x in *)
-          let stream = Cohttp_lwt.Body.to_stream body in
-          Lwt_io.with_file ~mode:Lwt_io.output filename (fun chan ->
-              Lwt_stream.iter_s (fun o -> Lwt_io.write chan o) stream) )
+    let filename =
+      let dir = Sys.getcwd () |> Unix.realpath |> Filename.concat in
+      dir name
     in
 
-    let exit_code = Sys.command (Printf.sprintf "%s %s" (get_cmd name) name) in
+    let download =
+      Fetcher.get ~download:true (url |> Uri.of_string) >>= fun (_, body) ->
+      (* let total_file =
+           match Cohttp.Header.get resp.headers "Content-Length" with
+           | Some length -> Int64.of_string length
+           | None -> 0L
+         in *)
+      let stream = Cohttp_lwt.Body.to_stream body in
+      Lwt_io.with_file ~mode:Lwt_io.output filename (fun chan ->
+          Lwt_stream.iter_s (fun out -> Lwt_io.write chan out) stream)
+    in
 
-    print_endline ("Exited with: " ^ string_of_int exit_code);
+    let _ =
+      Lwt_main.run (Lwt.pick [ download; Loading.spinner ~message:name ])
+    in
 
+    print_newline ();
+
+    let _ = exec name repo_name in
+
+    (* let _ = Sys.rename name repo_name in *)
     ()
 end

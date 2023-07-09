@@ -3,15 +3,18 @@
  (libraries
   cohttp
   cohttp-lwt-unix
+  directories
+  inquirer_oc
   lwt
   lwt_ssl
-  terminal_size
-  inquirer_oc
-  textwrap
   printbox
-  printbox-text)
+  printbox-text
+  progress
+  terminal_size
+  lwt_ppx
+  textwrap)
  (preprocess
-  (pps ppx_yojson_conv ppx_deriving.show)))
+  (pps ppx_yojson_conv ppx_deriving.show lwt_ppx)))
 
 ; (rule
 ;  (target tmp)

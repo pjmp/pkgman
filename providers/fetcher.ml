@@ -13,7 +13,7 @@ let rec get ?(download = false) ?(redirects = 5) url =
   let _ =
     if download then headers =: ("Accept", "application/octet-stream");
 
-    match Sys.getenv_opt "GITHUB_PERSONAL_TOKEN" with
+    match Sys.getenv_opt "PROVIDER_APIKEY" with
     | Some token -> headers =: ("Authorization", "Bearer " ^ token)
     | _ -> ()
   in

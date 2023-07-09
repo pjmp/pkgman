@@ -1,6 +1,6 @@
 (executable
  (public_name pkgman)
  (name main)
- (libraries cmdliner dune-build-info pkgman providers)
+ (libraries cmdliner dune-build-info pkgman providers lwt lwt_ppx)
  (preprocess
-  (pps ppx_deriving.show ppx_enumerate)))
+  (pps ppx_deriving.show ppx_enumerate lwt_ppx)))
