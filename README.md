@@ -12,9 +12,18 @@
 pkgman -h
 ```
 
-## Alternative idea
+## Setup
 
-Flag `--github` or `--gitlab` or `--<vcs provider>`
+```bash
+if [ -d ~/.local/pkgman ]; then
+    PKGMAN_PATH=(~/.local/pkgman/*)
+    PKGMAN_PATH="$(tr ' ' ':' <<< "${PKGMAN_PATH[@]}")"
+
+    export PATH="$PATH:$PKGMAN_PATH"
+fi
+```
+
+## Alternative idea
 
 Resources:
 

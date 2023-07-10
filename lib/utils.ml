@@ -1,10 +1,12 @@
-let mkdir dir =
-  try if not (Sys.file_exists dir) then Sys.mkdir dir 0o755 with _ -> ()
-
 let app_dir () =
-  let module H = Directories.Base_dirs () in
+  let module Dirs = Directories.Base_dirs () in
+  (* let exe_dir =
+       (fun dir -> Some (Filename.dirname dir))
+       |> Option.bind Dirs.executable_dir
+       |> Option.value ~default:".local"
+     in *)
   let dir =
-    Option.bind H.home_dir (fun home ->
+    Option.bind Dirs.home_dir (fun home ->
         let dir =
           List.fold_right Filename.concat [ home; ".local"; "pkgman" ] ""
         in
@@ -13,7 +15,7 @@ let app_dir () =
 
   match dir with
   | Some dir ->
-      let _ = mkdir dir in
+      let _ = FileUtil.mkdir dir in
       Unix.realpath dir
   | None -> failwith "HOME directory not found"
 
@@ -39,9 +41,13 @@ let exec filename repo =
 
   match cmd with
   | Some cmd ->
-      mkdir repo;
+      FileUtil.mkdir repo;
       Sys.command cmd |> ignore;
-      Filename.concat (app_dir ()) repo |> FileUtil.mv repo
+
+      if Sys.file_exists repo then FileUtil.rm ~recurse:true [ repo ]
+      else
+        Filename.concat (app_dir ()) repo
+        |> FileUtil.mv ~force:FileUtil.Force repo
   | _ -> failwith (filename ^ " is not supported")
 
 let spinner ~message =

@@ -1,4 +1,5 @@
 open Lwt
+open Lwt.Syntax
 open Types
 
 type gh_asset = { url : string; name : string }
@@ -31,19 +32,22 @@ type gh_repo = { name : string }
 module Github : Provider = struct
   type t = { name : string }
 
+  let get_body url =
+    let body =
+      let* _, body = url |> Uri.of_string |> Fetcher.get in
+      Cohttp_lwt.Body.to_string body
+    in
+    body
+
   let search ~query ~ty =
     let ty = match ty with `Users -> "users" | `Repo -> "repositories" in
-    let url =
+
+    let res =
       Printf.sprintf
         "https://api.github.com/search/%s?per_page=100&sort=best&q=%s" ty query
-      |> Uri.of_string
+      |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
+      |> gh_responses_of_yojson
     in
-    let json =
-      Lwt_main.run
-        (Fetcher.get url >>= fun (_, body) -> body |> Cohttp_lwt.Body.to_string)
-    in
-    let json = Yojson.Safe.from_string json in
-    let res = gh_responses_of_yojson json in
     let open Pkgman.Printer in
     print_tree query
       (res.items
@@ -57,30 +61,20 @@ module Github : Provider = struct
              }))
 
   let install ~query =
-    let repo_url =
-      Printf.sprintf "https://api.github.com/repos/%s" query |> Uri.of_string
-    in
-
     let repo_name =
       let res =
-        Fetcher.get repo_url >>= fun (_, body) -> Cohttp_lwt.Body.to_string body
+        Printf.sprintf "https://api.github.com/repos/%s" query
+        |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
+        |> gh_repo_of_yojson
       in
-      let json = Lwt_main.run res |> Yojson.Safe.from_string in
-      let res = gh_repo_of_yojson json in
       res.name
     in
 
-    let url =
+    let res =
       Printf.sprintf "https://api.github.com/repos/%s/releases/latest" query
-      |> Uri.of_string
+      |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
+      |> gh_assets_of_yojson
     in
-
-    let json =
-      Lwt_main.run
-        (Fetcher.get url >>= fun (_, body) -> body |> Cohttp_lwt.Body.to_string)
-    in
-    let json = Yojson.Safe.from_string json in
-    let res = gh_assets_of_yojson json in
 
     let result =
       Inquirer_oc.(
