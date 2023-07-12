@@ -2,32 +2,38 @@ open Lwt
 open Lwt.Syntax
 open Types
 
-type gh_asset = { url : string; name : string }
+type license = { name : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
-type gh_assets = { assets : gh_asset list }
-[@@yojson.allow_extra_fields] [@@deriving yojson, show]
-
-type gh_license = { name : string }
-[@@yojson.allow_extra_fields] [@@deriving yojson, show]
-
-type gh_response = {
+type repo = {
   description : string option;
   full_name : string;
   html_url : string;
   language : string option;
-  license : gh_license option;
+  license : license option;
   name : string;
   stargazers_count : int;
   updated_at : string;
 }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
-type gh_responses = { items : gh_response list }
+type gh_search_repo = { items : repo list }
+[@@yojson.allow_extra_fields] [@@deriving yojson, show]
+
+type user = { login : string; html_url : string }
+[@@yojson.allow_extra_fields] [@@deriving yojson, show]
+
+type gh_search_user = { items : user list }
+[@@yojson.allow_extra_fields] [@@deriving yojson, show]
+
+type asset = { url : string; name : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
 type gh_repo = { name : string }
-[@@yojson.allow_extra_fields] [@@deriving yojson]
+[@@yojson.allow_extra_fields] [@@deriving yojson, show]
+
+type gh_install = { assets : asset list }
+[@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
 module Github : Provider = struct
   type t = { name : string }
@@ -40,25 +46,47 @@ module Github : Provider = struct
     body
 
   let search ~query ~ty =
-    let ty = match ty with `Users -> "users" | `Repo -> "repositories" in
+    let search_ty =
+      match ty with
+      | `Users -> "users"
+      | `Repo -> "repositories"
+    in
 
     let res =
       Printf.sprintf
-        "https://api.github.com/search/%s?per_page=100&sort=best&q=%s" ty query
+        "https://api.github.com/search/%s?per_page=100&sort=best&q=%s" search_ty
+        query
       |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
-      |> gh_responses_of_yojson
     in
-    let open Pkgman.Printer in
-    print_tree query
-      (res.items
-      |> List.map (fun (t : gh_response) ->
-             {
-               description = t.description;
-               repo_name = t.full_name;
-               name = t.name;
-               url = t.html_url;
-               license = Option.bind t.license (fun l -> Some l.name);
-             }))
+
+    Pkgman.Printer.(
+      match ty with
+      | `Repo ->
+          let nodes = res |> gh_search_repo_of_yojson in
+
+          print_tree query
+            (nodes.items
+            |> List.map (fun (t : repo) ->
+                   {
+                     description = t.description;
+                     repo_name = t.full_name;
+                     name = t.name;
+                     url = t.html_url;
+                     license = Option.bind t.license (fun l -> Some l.name);
+                   }))
+      | `Users ->
+          let nodes = res |> gh_search_user_of_yojson in
+
+          print_tree query
+            (nodes.items
+            |> List.map (fun (t : user) ->
+                   {
+                     description = None;
+                     repo_name = t.html_url;
+                     name = t.login;
+                     url = t.html_url;
+                     license = None;
+                   })))
 
   let install ~query =
     let repo_name =
@@ -73,7 +101,7 @@ module Github : Provider = struct
     let res =
       Printf.sprintf "https://api.github.com/repos/%s/releases/latest" query
       |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
-      |> gh_assets_of_yojson
+      |> gh_install_of_yojson
     in
 
     let result =
@@ -84,7 +112,7 @@ module Github : Provider = struct
           message = "Please select asset to download";
           choices =
             res.assets
-            |> List.map (fun (a : gh_asset) ->
+            |> List.map (fun (a : asset) ->
                    let asset : Question_list_type.choice =
                      { word = a.name; value = a.url }
                    in
@@ -95,6 +123,11 @@ module Github : Provider = struct
     in
 
     let { url; name } = res.assets |> List.find (fun a -> a.url = result) in
+
+    let _ =
+      let supported = Pkgman.Utils.is_supported name in
+      if not supported then failwith (name ^ " has unsupported extension")
+    in
 
     let _ = Filename.get_temp_dir_name () |> Sys.chdir in
 

@@ -5,7 +5,7 @@ let run () =
       | Cli.Github -> (module Providers.Github.Github)
       | _ ->
           failwith
-            ("Hosting " ^ Cli.show_providers provider ^ " is unimplemented")
+            ("Provider " ^ Cli.show_providers provider ^ " is unimplemented")
     in
     match action with
     | Cli.Install -> P.install ~query
@@ -34,4 +34,5 @@ https://gitlab.manjaro.org/packages/core/bash/-/blob/master/dot.bashrc
 
 let () =
   let _ = Printexc.record_backtrace true in
+  print_newline ();
   App.main ()

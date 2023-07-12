@@ -21,7 +21,10 @@ let print_tree : string -> print_type list -> unit =
                (Wrapper.fill writer
                   (Option.value ~default:"Description: N/A" pkg.description))
                ("License: "
-               ^ match pkg.license with Some name -> name | _ -> "N/A")
+               ^
+               match pkg.license with
+               | Some name -> name
+               | _ -> "N/A")
                pkg.url
            in
            B.tree branch [ B.text leaves ])

@@ -1,1 +1,2 @@
-profile = default
+break-before-in = fit-or-vertical
+break-cases = all

@@ -4,7 +4,9 @@ type providers = Github | Gitlab | Bitbucket | Codeberg
 type action = Install | Search [@@deriving show { with_path = false }]
 type query_type = [ `Repo | `Users ] [@@deriving enumerate]
 
-let show_query_type = function `Repo -> "repo" | `Users -> "users"
+let show_query_type = function
+  | `Repo -> "repo"
+  | `Users -> "users"
 
 module type Runnable = sig
   val run : action -> string -> providers -> query_type -> unit
@@ -55,7 +57,9 @@ module CLI (R : Runnable) = struct
   let main_cmd =
     let version =
       Build_info.V1.(
-        match version () with Some v -> Version.to_string v | None -> "0.1")
+        match version () with
+        | Some v -> Version.to_string v
+        | None -> "0.1")
     in
     let info =
       Cmd.info "pkgman" ~version ~exits:[]

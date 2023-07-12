@@ -33,11 +33,15 @@ and follow_redirect ~redirects request_uri (response, body) =
   in
   match status with
   | `OK -> Lwt.return (response, body)
-  | `Permanent_redirect | `Moved_permanently ->
+  | `Permanent_redirect
+  | `Moved_permanently ->
       handle_redirect ~permanent:true ~redirects request_uri response
-  | `Found | `Temporary_redirect ->
+  | `Found
+  | `Temporary_redirect ->
       handle_redirect ~permanent:false ~redirects request_uri response
-  | `Not_found | `Gone -> Lwt.fail_with "Not found"
+  | `Not_found
+  | `Gone ->
+      Lwt.fail_with "Not found"
   | status ->
       Lwt.fail_with
         (Printf.sprintf "Unhandled status: %s"

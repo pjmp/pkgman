@@ -25,7 +25,8 @@ let exec filename repo =
       let ext = Printf.sprintf "^*.%s$" ext in
       let _ = Str.search_forward (Str.regexp ext) filename 0 in
       true
-    with _ -> false
+    with
+    | _ -> false
   in
 
   let cmd =
@@ -59,3 +60,11 @@ let spinner ~message =
     Lwt_unix.sleep 0.15 >>= fun () -> loop (i + 1)
   in
   loop 0
+
+let is_supported file =
+  match FilePath.get_extension file with
+  | "tar.gz"
+  | "tar"
+  | "zip" ->
+      true
+  | _ -> false
