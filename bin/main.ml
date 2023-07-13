@@ -2,7 +2,7 @@ let run () =
   let run action query provider ty =
     let (module P : Providers.Types.Provider) =
       match provider with
-      | Cli.Github -> (module Providers.Github.Github)
+      | Cli.Github -> (module Providers.Github)
       | _ ->
           failwith
             ("Provider " ^ Cli.show_providers provider ^ " is unimplemented")
