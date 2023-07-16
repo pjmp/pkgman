@@ -1,12 +1,19 @@
 (library
- (name pkgman)
+ (name pkgman_lib)
  (libraries
+  cohttp
+  cohttp-lwt-unix
   directories
   fileutils
+  inquirer_oc
   lwt
+  lwt_ppx
   lwt_ssl
   printbox
   printbox-text
   str
   terminal_size
-  textwrap))
+  textwrap
+  pkgman_common)
+ (preprocess
+  (pps ppx_yojson_conv ppx_deriving.show lwt_ppx)))

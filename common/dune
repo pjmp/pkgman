@@ -1,0 +1,4 @@
+(library
+ (name pkgman_common)
+ (preprocess
+  (pps ppx_deriving.show ppx_enumerate)))

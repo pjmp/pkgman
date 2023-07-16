@@ -1,20 +1,20 @@
-let run () =
-  let run action query provider ty =
-    let (module P : Providers.Types.Provider) =
-      match provider with
-      | Cli.Github -> (module Providers.Github)
-      | _ ->
-          failwith
-            ("Provider " ^ Cli.show_providers provider ^ " is unimplemented")
-    in
-    match action with
-    | Cli.Install -> P.install ~query
-    | Cli.Search -> P.search ~query ~ty
-  in
-  run
+module Pkgman = Pkgman_lib
+module Types = Pkgman_common.Interface
 
 module App = Cli.CLI (struct
-  let run = run ()
+  let run (action : Types.action) (opts : Types.opts) =
+    let (module P : Types.Provider) =
+      match opts.provider with
+      | Types.Github -> (module Pkgman.Github)
+      | _ ->
+          failwith
+            ("Provider "
+            ^ Types.show_providers opts.provider
+            ^ " is unimplemented")
+    in
+    match action with
+    | Types.Install -> P.install opts
+    | Types.Search -> P.search opts
 end)
 
 (*
@@ -35,4 +35,5 @@ https://gitlab.manjaro.org/packages/core/bash/-/blob/master/dot.bashrc
 let () =
   let _ = Printexc.record_backtrace true in
   print_newline ();
+
   App.main ()

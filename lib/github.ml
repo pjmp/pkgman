@@ -1,5 +1,6 @@
 open Lwt
 open Lwt.Syntax
+module I = Pkgman_common.Interface
 
 type license = { name : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
@@ -41,9 +42,9 @@ let get_body url =
   in
   body
 
-let search ~query ~ty =
+let search (opts : I.opts) =
   let search_ty =
-    match ty with
+    match opts.search_type with
     | `Users -> "users"
     | `Repo -> "repositories"
   in
@@ -51,16 +52,16 @@ let search ~query ~ty =
   let res =
     Printf.sprintf
       "https://api.github.com/search/%s?per_page=100&sort=best&q=%s" search_ty
-      query
+      opts.query
     |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
   in
 
-  Pkgman.Printer.(
-    match ty with
+  Printer.(
+    match opts.search_type with
     | `Repo ->
         let nodes = res |> gh_search_repo_of_yojson in
 
-        print_tree query
+        print_tree opts.query
           (nodes.items
           |> List.map (fun (t : repo) ->
                  {
@@ -73,7 +74,7 @@ let search ~query ~ty =
     | `Users ->
         let nodes = res |> gh_search_user_of_yojson in
 
-        print_tree query
+        print_tree opts.query
           (nodes.items
           |> List.map (fun (t : user) ->
                  {
@@ -84,10 +85,10 @@ let search ~query ~ty =
                    license = None;
                  })))
 
-let install ~query =
+let install (opts : I.opts) =
   let repo_name =
     let res =
-      Printf.sprintf "https://api.github.com/repos/%s" query
+      Printf.sprintf "https://api.github.com/repos/%s" opts.query
       |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
       |> gh_repo_of_yojson
     in
@@ -95,7 +96,7 @@ let install ~query =
   in
 
   let res =
-    Printf.sprintf "https://api.github.com/repos/%s/releases/latest" query
+    Printf.sprintf "https://api.github.com/repos/%s/releases/latest" opts.query
     |> get_body |> Lwt_main.run |> Yojson.Safe.from_string
     |> gh_install_of_yojson
   in
@@ -121,7 +122,7 @@ let install ~query =
   let { url; name } = res.assets |> List.find (fun a -> a.url = result) in
 
   let _ =
-    let supported = Pkgman.Utils.is_supported name in
+    let supported = Utils.is_supported name in
     if not supported then failwith (name ^ " has unsupported extension")
   in
 
@@ -144,11 +145,9 @@ let install ~query =
         Lwt_stream.iter_s (fun out -> Lwt_io.write chan out) stream)
   in
 
-  let _ =
-    Lwt_main.run (Lwt.pick [ download; Pkgman.Utils.spinner ~message:name ])
-  in
+  let _ = Lwt_main.run (Lwt.pick [ download; Utils.spinner ~message:name ]) in
 
   print_newline ();
 
-  let _ = Pkgman.Utils.exec name repo_name in
+  let _ = Utils.exec name repo_name in
   ()
