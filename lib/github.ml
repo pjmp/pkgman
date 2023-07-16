@@ -42,11 +42,11 @@ let get_body url =
   in
   body
 
-let search (opts : I.opts) =
+let search (_ : I.common_opts) (opts : I.opts) =
   let search_ty =
     match opts.search_type with
-    | `Users -> "users"
-    | `Repo -> "repositories"
+    | Users -> "users"
+    | Repo -> "repositories"
   in
 
   let res =
@@ -58,7 +58,7 @@ let search (opts : I.opts) =
 
   Printer.(
     match opts.search_type with
-    | `Repo ->
+    | Repo ->
         let nodes = res |> gh_search_repo_of_yojson in
 
         print_tree opts.query
@@ -71,7 +71,7 @@ let search (opts : I.opts) =
                    url = t.html_url;
                    license = Option.bind t.license (fun l -> Some l.name);
                  }))
-    | `Users ->
+    | Users ->
         let nodes = res |> gh_search_user_of_yojson in
 
         print_tree opts.query
@@ -85,7 +85,7 @@ let search (opts : I.opts) =
                    license = None;
                  })))
 
-let install (opts : I.opts) =
+let install (_ : I.common_opts) (opts : I.opts) =
   let repo_name =
     let res =
       Printf.sprintf "https://api.github.com/repos/%s" opts.query
@@ -151,3 +151,7 @@ let install (opts : I.opts) =
 
   let _ = Utils.exec name repo_name in
   ()
+
+let list opts lty =
+  I.show_common_opts opts |> print_endline;
+  I.show_list_type lty |> print_endline
