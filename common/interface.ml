@@ -7,7 +7,7 @@ type action = Install | Search | List
 type search_type = Repo | Users
 [@@deriving show { with_path = false }, enumerate]
 
-type list_type = Available | Installed
+type list_type = Installed | Available
 [@@deriving show { with_path = false }, enumerate]
 
 type opts = { query : string; search_type : search_type }
@@ -19,5 +19,5 @@ type common_opts = { provider : providers; verbose : bool }
 module type Provider = sig
   val search : common_opts -> opts -> unit
   val install : common_opts -> opts -> unit
-  val list : common_opts -> list_type -> unit
+  val list : common_opts -> list_type -> string option -> unit
 end

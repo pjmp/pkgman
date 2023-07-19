@@ -1,0 +1,3 @@
+(library
+ (name providers)
+ (libraries github))

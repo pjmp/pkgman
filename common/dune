@@ -1,4 +1,18 @@
 (library
  (name pkgman_common)
+ (libraries
+  cohttp
+  cohttp-lwt-unix
+  directories
+  fileutils
+  inquirer_oc
+  lwt
+  lwt_ppx
+  lwt_ssl
+  printbox
+  printbox-text
+  str
+  terminal_size
+  textwrap)
  (preprocess
   (pps ppx_deriving.show ppx_enumerate)))

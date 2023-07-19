@@ -1,4 +1,4 @@
 (executable
  (public_name pkgman)
  (name main)
- (libraries cmdliner dune-build-info pkgman_lib pkgman_common))
+ (libraries cmdliner dune-build-info providers pkgman_common))

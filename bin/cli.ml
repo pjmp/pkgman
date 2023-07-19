@@ -1,9 +1,9 @@
 open Pkgman_common.Interface
 
-let lowercase str = str |> String.lowercase_ascii
-
 module CLI (R : Provider) = struct
   open Cmdliner
+
+  let lowercase str = str |> String.lowercase_ascii
 
   let query_t =
     Arg.(
@@ -65,6 +65,12 @@ module CLI (R : Provider) = struct
     in
     Cmd.v info term
 
+  let query_opt_t =
+    Arg.(
+      value
+      & pos 0 (some string) None
+      & info [] ~doc:"Search for repo or org." ~docv:"QUERY")
+
   let parse =
     let version =
       Build_info.V1.(
@@ -82,18 +88,18 @@ module CLI (R : Provider) = struct
       all_of_action
       |> List.map (fun action ->
              match action with
-             | List as list ->
+             | List as l ->
                  let info =
                    Cmd.info
-                     (show_action list |> lowercase)
+                     (show_action l |> lowercase)
                      ~doc:
                        "List either installed or releases available in remote."
                      ~exits:[]
                  in
                  let term =
                    Term.(
-                     const (fun opts ty -> R.list opts ty)
-                     $ parse_common_opts $ list_t)
+                     const (fun opts ty q -> R.list opts ty q)
+                     $ parse_common_opts $ list_t $ query_opt_t)
                  in
                  Cmd.v info term
              | act ->

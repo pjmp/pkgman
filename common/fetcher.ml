@@ -67,3 +67,11 @@ and handle_redirect ~permanent ~redirects request_uri response =
           else Lwt.return_unit
         in
         get uri ~redirects:(redirects - 1)
+
+let get_body url =
+  let open Lwt.Syntax in
+  let body =
+    let* _, body = url |> Uri.of_string |> get in
+    Cohttp_lwt.Body.to_string body
+  in
+  body
