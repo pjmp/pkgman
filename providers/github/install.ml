@@ -1,4 +1,4 @@
-module Pkgman = Pkgman_common
+open Pkgman_common
 
 type asset = { url : string; name : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
@@ -9,11 +9,11 @@ type gh_repo = { name : string }
 type gh_install = { assets : asset list }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
-let get (_ : Pkgman.Interface.common_opts) (opts : Pkgman.Interface.opts) =
+let get (_ : Interface.common_opts) (opts : Interface.opts) =
   let repo_name =
     let res =
       Printf.sprintf "https://api.github.com/repos/%s" opts.query
-      |> Pkgman.Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
+      |> Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
       |> gh_repo_of_yojson
     in
     res.name
@@ -21,7 +21,7 @@ let get (_ : Pkgman.Interface.common_opts) (opts : Pkgman.Interface.opts) =
 
   let res =
     Printf.sprintf "https://api.github.com/repos/%s/releases/latest" opts.query
-    |> Pkgman.Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
+    |> Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
     |> gh_install_of_yojson
   in
 
@@ -48,7 +48,7 @@ let get (_ : Pkgman.Interface.common_opts) (opts : Pkgman.Interface.opts) =
   in
 
   let _ =
-    let supported = Pkgman.Utils.is_supported name in
+    let supported = Utils.is_supported name in
     if not supported then failwith (name ^ " has unsupported extension")
   in
 
@@ -61,8 +61,7 @@ let get (_ : Pkgman.Interface.common_opts) (opts : Pkgman.Interface.opts) =
 
   let open Lwt in
   let download =
-    Pkgman.Fetcher.get ~download:true (url |> Uri.of_string)
-    >>= fun (_, body) ->
+    Fetcher.get ~download:true (url |> Uri.of_string) >>= fun (_, body) ->
     (* let total_file =
          match Cohttp.Header.get resp.headers "Content-Length" with
          | Some length -> Int64.of_string length
@@ -73,11 +72,9 @@ let get (_ : Pkgman.Interface.common_opts) (opts : Pkgman.Interface.opts) =
         Lwt_stream.iter_s (fun out -> Lwt_io.write chan out) stream)
   in
 
-  let _ =
-    Lwt_main.run (Lwt.pick [ download; Pkgman.Utils.spinner ~message:name ])
-  in
+  let _ = Lwt_main.run (Lwt.pick [ download; Utils.spinner ~message:name ]) in
 
   print_newline ();
 
-  let _ = Pkgman.Utils.exec name repo_name in
+  let _ = Utils.exec name repo_name in
   ()

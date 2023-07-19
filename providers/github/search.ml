@@ -1,4 +1,4 @@
-module Pkgman = Pkgman_common
+open Pkgman_common
 
 type user = { login : string; html_url : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
@@ -24,7 +24,7 @@ type repo = {
 type search_repo = { items : repo list }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
-let get (_ : Pkgman.Interface.common_opts) (opts : Pkgman.Interface.opts) =
+let get (_ : Interface.common_opts) (opts : Interface.opts) =
   let search_ty =
     match opts.search_type with
     | Users -> "users"
@@ -35,10 +35,10 @@ let get (_ : Pkgman.Interface.common_opts) (opts : Pkgman.Interface.opts) =
     Printf.sprintf
       "https://api.github.com/search/%s?per_page=100&sort=best&q=%s" search_ty
       opts.query
-    |> Pkgman.Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
+    |> Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
   in
 
-  Pkgman.Printer.(
+  Printer.(
     match opts.search_type with
     | Repo ->
         let nodes = res |> search_repo_of_yojson in
