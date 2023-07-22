@@ -35,8 +35,6 @@ end)
    *.zip)       unzip $1     ;;
 *)
 
-(* Pkgman_lib. *)
-
 let () =
   let _ = Printexc.record_backtrace true in
   print_newline ();

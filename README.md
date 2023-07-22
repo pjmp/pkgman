@@ -16,8 +16,7 @@ pkgman -h
 
 ```bash
 if [ -d ~/.local/pkgman ]; then
-    PKGMAN_PATH=(~/.local/pkgman/*)
-    PKGMAN_PATH="$(tr ' ' ':' <<< "${PKGMAN_PATH[@]}")"
+    PKGMAN_PATH="$(find ~/.local/pkgman -type f -executable -exec sh -c 'dirname $1 | tr "\n" ":"' shell {} \;)"
 
     export PATH="$PATH:$PKGMAN_PATH"
 fi

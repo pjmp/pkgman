@@ -19,16 +19,15 @@ let app_dir () =
       Unix.realpath dir
   | None -> failwith "HOME directory not found"
 
-let exec filename repo =
-  let has ext =
-    try
-      let ext = Printf.sprintf "^*.%s$" ext in
-      let _ = Str.search_forward (Str.regexp ext) filename 0 in
-      true
-    with
-    | _ -> false
-  in
+let has ext filename =
+  try
+    let ext = Printf.sprintf "^*.%s$" ext in
+    let _ = Str.search_forward (Str.regexp ext) filename 0 in
+    true
+  with
+  | _ -> false
 
+let exec filename repo =
   let cmd =
     Option.bind
       ([
@@ -36,7 +35,7 @@ let exec filename repo =
          (".tar", "tar --strip-components=1 -C " ^ repo ^ " -xf " ^ filename);
          (".zip", "unzip ");
        ]
-      |> List.find_opt (fun ext -> has (fst ext)))
+      |> List.find_opt (fun ext -> has (fst ext) filename))
       (fun (_, a) -> Some a)
   in
 
@@ -45,7 +44,9 @@ let exec filename repo =
       FileUtil.mkdir repo;
       Sys.command cmd |> ignore;
 
-      if Sys.file_exists repo then FileUtil.rm ~recurse:true [ repo ]
+      let dir = Filename.concat (app_dir ()) repo in
+
+      if Sys.file_exists dir then FileUtil.rm ~recurse:true [ dir ]
       else
         Filename.concat (app_dir ()) repo
         |> FileUtil.mv ~force:FileUtil.Force repo
@@ -62,9 +63,4 @@ let spinner ~message =
   loop 0
 
 let is_supported file =
-  match FilePath.get_extension file with
-  | "tar.gz"
-  | "tar"
-  | "zip" ->
-      true
-  | _ -> false
+  [| ".tar.gz"; ".tar"; ".zip" |] |> Array.exists (fun ext -> has ext file)
