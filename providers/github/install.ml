@@ -4,15 +4,22 @@ type asset = { url : string; name : string }
 [@@yojson.allow_extra_fields] [@@deriving yojson, show]
 
 type gh_repo = { name : string }
-[@@yojson.allow_extra_fields] [@@deriving yojson, show]
+[@@yojson.allow_extra_fields] [@@deriving yojson, show { with_path = false }]
 
 type gh_install = { assets : asset list }
-[@@yojson.allow_extra_fields] [@@deriving yojson, show]
+[@@yojson.allow_extra_fields] [@@deriving yojson, show { with_path = false }]
 
 let get (_ : Interface.common_opts) (opts : Interface.opts) =
+  let repo, version =
+    match String.split_on_char '@' opts.query with
+    | [ repo ] -> (repo, "latest")
+    | [ repo; version ] -> (repo, version)
+    | _ -> failwith "unexpected query"
+  in
+
   let repo_name =
     let res =
-      Printf.sprintf "https://api.github.com/repos/%s" opts.query
+      Printf.sprintf "https://api.github.com/repos/%s" repo
       |> Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
       |> gh_repo_of_yojson
     in
@@ -20,10 +27,19 @@ let get (_ : Interface.common_opts) (opts : Interface.opts) =
   in
 
   let res =
-    Printf.sprintf "https://api.github.com/repos/%s/releases/latest" opts.query
-    |> Fetcher.get_body |> Lwt_main.run |> Yojson.Safe.from_string
-    |> gh_install_of_yojson
+    let url =
+      Printf.sprintf
+      @@
+      if version = "latest" then "https://api.github.com/repos/%s/releases/%s"
+      else "https://api.github.com/repos/%s/releases/tags/%s"
+    in
+
+    url repo version |> Fetcher.get_body |> Lwt_main.run
+    |> Yojson.Safe.from_string |> gh_install_of_yojson
   in
+
+  if Stdlib.List.length res.assets = 0 then
+    failwith "no assets available to download";
 
   let result =
     Inquirer_oc.(
